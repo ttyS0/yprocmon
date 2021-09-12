@@ -9,3 +9,5 @@ bak/
 bin/
 
 node_modules
+
+.vscode/compile_commands.json
