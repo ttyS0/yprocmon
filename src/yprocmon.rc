@@ -1,0 +1,24 @@
+id ICON "assets/yprocmon.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "N/A"
+      VALUE "FileDescription", "Yprocmon Utility"
+      VALUE "FileVersion", "1.0"
+      VALUE "InternalName", "yprocmon"
+      VALUE "LegalCopyright", "sigeryeung"
+      VALUE "OriginalFilename", "yprocmon.exe"
+      VALUE "ProductName", "yprocmon"
+      VALUE "ProductVersion", "1.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
