@@ -1,0 +1,11 @@
+*.bak
+*.fix
+*.sh
+
+.xmake
+
+build/
+bak/
+bin/
+
+node_modules

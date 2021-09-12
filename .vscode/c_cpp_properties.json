@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/x86_64-w64-mingw32/include/**"
+            ],
+            "defines": [
+                // "WIN32_LEAN_AND_MEAN",
+                // "_WIN32_WINNT=0x501",
+                // "DETOUR_DEBUG=0",
+                "UNICODE"
+            ],
+            "compilerPath": "/usr/bin/x86_64-w64-mingw32-g++",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
