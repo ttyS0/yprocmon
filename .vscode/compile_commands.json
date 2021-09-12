@@ -1,16 +1,6 @@
 [
 {
   "directory": "/home/siger/data/projects/software-security-project",
-  "arguments": ["/usr/bin/x86_64-w64-mingw32-g++", "-c", "-m64", "-Iinclude", "-DUNICODE", "-o", "build/.objs/yprocmon/mingw/x86_64/release/src/yprocmon.cc.obj", "src/yprocmon.cc"],
-  "file": "src/yprocmon.cc"
-},
-{
-  "directory": "/home/siger/data/projects/software-security-project",
-  "arguments": ["/usr/bin/x86_64-w64-mingw32-g++", "-c", "-m64", "-Iinclude", "-DUNICODE", "-o", "build/.objs/withdll/mingw/x86_64/release/deps/detour/samples/withdll/withdll.cpp.obj", "deps/detour/samples/withdll/withdll.cpp"],
-  "file": "deps/detour/samples/withdll/withdll.cpp"
-},
-{
-  "directory": "/home/siger/data/projects/software-security-project",
   "arguments": ["/usr/bin/x86_64-w64-mingw32-g++", "-c", "-m64", "-Iinclude", "-Ideps/detour/src", "-DUNICODE", "-DWIN32_LEAN_AND_MEAN", "-D_WIN32_WINNT=0x501", "-DDETOUR_DEBUG=0", "-o", "build/.objs/detours/mingw/x86_64/release/deps/detour/src/detours.cpp.obj", "deps/detour/src/detours.cpp"],
   "file": "deps/detour/src/detours.cpp"
 },
@@ -68,4 +58,19 @@
   "directory": "/home/siger/data/projects/software-security-project",
   "arguments": ["/usr/bin/x86_64-w64-mingw32-gcc", "-c", "-m64", "-Iinclude", "-DUNICODE", "-o", "build/.objs/ymsgbox/mingw/x86_64/release/samples/ymsgbox.c.obj", "samples/ymsgbox.c"],
   "file": "samples/ymsgbox.c"
+},
+{
+  "directory": "/home/siger/data/projects/software-security-project",
+  "arguments": ["/usr/bin/x86_64-w64-mingw32-windres", "-DUNICODE", "-DRAPIDJSON_HAS_STDSTRING", "-I", "include", "src/yprocmon.rc", "build/.objs/yprocmon/mingw/x86_64/release/src/yprocmon.rc.obj"],
+  "file": "src/yprocmon.rc"
+},
+{
+  "directory": "/home/siger/data/projects/software-security-project",
+  "arguments": ["/usr/bin/x86_64-w64-mingw32-g++", "-c", "-m64", "-Iinclude", "-DUNICODE", "-DRAPIDJSON_HAS_STDSTRING", "-o", "build/.objs/yprocmon/mingw/x86_64/release/src/yprocmon.cc.obj", "src/yprocmon.cc"],
+  "file": "src/yprocmon.cc"
+},
+{
+  "directory": "/home/siger/data/projects/software-security-project",
+  "arguments": ["/usr/bin/x86_64-w64-mingw32-g++", "-c", "-m64", "-Iinclude", "-DUNICODE", "-o", "build/.objs/withdll/mingw/x86_64/release/deps/detour/samples/withdll/withdll.cpp.obj", "deps/detour/samples/withdll/withdll.cpp"],
+  "file": "deps/detour/samples/withdll/withdll.cpp"
 }]
