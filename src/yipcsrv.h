@@ -12,6 +12,7 @@
 
 #include "debug.h"
 #include "yipc.h"
+#include "yprocmon.h"
 #include <windows.h>
 
 #define CONNECTING_STATE 0
@@ -329,37 +330,44 @@ VOID GetAnswerToRequest(LPPIPEINST pipe)
     while (processed < pipe->cbRead)
     {
         yhook_message *m = (yhook_message *)p;
+        yhook_message_entry e;
         std::string message(m->message, m->length);
-        console_print(
-            "[IPC] Receive IPC message from, time: %02d:%02d:%02d.%d, "
-            "type: %d, length: %u\n",
-            m->time.wHour, m->time.wMinute, m->time.wSecond,
-            m->time.wMilliseconds, m->type, m->length);
-        for (size_t i = 0; i < 40; i++)
-        {
-            console_print("%02X ", (unsigned char)pipe->chRequest[i]);
-        }
-        console_print("\n");
+        // console_print(
+        //     "[IPC] Receive IPC message from, time: %02d:%02d:%02d.%d, "
+        //     "type: %d, length: %u\n",
+        //     m->time.wHour, m->time.wMinute, m->time.wSecond,
+        //     m->time.wMilliseconds, m->type, m->length);
+        // for (size_t i = 0; i < 40; i++)
+        // {
+        //     console_print("%02X ", (unsigned char)pipe->chRequest[i]);
+        // }
+        // console_print("\n");
+        e.type = m->type;
+        e.timestamp = m->timestamp;
+        memcpy(&e.time, &m->time, sizeof(e.time));
         if (m->type == YHOOK_IPC_SPAWN)
         {
             const yhook_ipc_spawn &spawn = parse_spawn_message(message);
-            console_print("\t[IPC][SPAWN] Name: %s PID: %u\n",
-                          spawn.process.c_str(), spawn.pid);
+            // console_print("\t[IPC][SPAWN] Name: %s PID: %u\n",
+            //               spawn.process.c_str(), spawn.pid);
+            e.spawn = spawn;
         }
         else if (m->type == YHOOK_IPC_HOOK)
         {
-
             const yhook_ipc_hook &hook = parse_hook_message(message);
-            console_print("\t[IPC][HOOK] Name: %s\n", hook.name.c_str());
-            size_t i = 0;
-            for (auto const &arg : hook.args)
-            {
-                console_print("\t[IPC][HOOK] Arg [%d] %s: %s\n", i,
-                              arg.first.c_str(), arg.second.c_str());
-                i++;
-            }
+            // console_print("\t[IPC][HOOK] Name: %s\n", hook.name.c_str());
+            // size_t i = 0;
+            // for (auto const &arg : hook.args)
+            // {
+            //     console_print("\t[IPC][HOOK] Arg [%d] %s: %s\n", i,
+            //                   arg.first.c_str(), arg.second.c_str());
+            //     i++;
+            // }
+            e.hook = hook;
         }
-        console_print("\n");
+        // console_print("\n");
+        std::lock_guard<std::mutex> guard(state.operations_mutex);
+        state.operations.push_back(e);
         p += m->length;
         processed += m->length;
         break;

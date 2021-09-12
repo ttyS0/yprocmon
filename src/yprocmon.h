@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "yipc.h"
+#include <mutex>
 #include <vector>
 #include <windows.h>
 
@@ -18,15 +20,9 @@
 #define YPROCMON_HTTP_PORT 8051
 #define YPROCMON_HTTP_URL "http://localhost:" QUOTE_EXPANDED(YPROCMON_HTTP_PORT)
 
-struct yprocmon_thread
-{
-    HANDLE handle;
-    DWORD id;
-};
-
 struct yprocmon_state
 {
     unsigned short port;
-    const char *pipe;
-    std::vector<yprocmon_thread> threads;
-};
+    std::mutex operations_mutex;
+    std::vector<yhook_message_entry> operations;
+} state;

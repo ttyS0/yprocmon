@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2021 sigeryeung
  *
- * @file yprocmon.cc
+ * @file yhttp.h
  * @author Siger Yang (sigeryeung@gmail.com)
  * @date 2021-09-10
  *
- * @brief yprocmon 主模块
+ * @brief HTTP 服务器
  */
 
 #pragma once
@@ -14,12 +14,14 @@
 #include "yprocmon.h"
 #include <fstream>
 #include <httplib.h>
+#include <mutex>
 
-#include <rapidjson/rapidjson.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 httplib::Server svr;
 
-void start_http_server(const yprocmon_state &state)
+void start_http_server()
 {
     svr.set_logger(
         [](const auto &req, const auto &res)
@@ -31,6 +33,37 @@ void start_http_server(const yprocmon_state &state)
         });
     svr.Get("/api/ping", [](const httplib::Request &, httplib::Response &res)
             { res.set_content("{\"ping\": true}", "application/json"); });
+    svr.Get("/api/operations",
+            [&](const httplib::Request &req, httplib::Response &res)
+            {
+                std::lock_guard<std::mutex> guard(state.operations_mutex);
+                rapidjson::StringBuffer s;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+                writer.StartArray();
+                if (req.has_param("after"))
+                {
+                    time_t after = atoll(req.get_param_value("after").c_str());
+                    console_print(
+                        "[HTTP] Filtering operations after timestamp %lld.\n",
+                        after);
+                    auto start =
+                        std::upper_bound(state.operations.begin(),
+                                         state.operations.end(), after);
+                    for (auto e = start; e != state.operations.end(); e++)
+                    {
+                        e->Serialize(writer);
+                    }
+                }
+                else
+                {
+                    for (auto const &e : state.operations)
+                    {
+                        e.Serialize(writer);
+                    }
+                }
+                writer.EndArray();
+                res.set_content(s.GetString(), "application/json");
+            });
     svr.Post("/api/run",
              [](const httplib::Request &req, httplib::Response &res)
              {

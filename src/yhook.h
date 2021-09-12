@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2021 sigeryeung
  *
- * @file yhook.cc
+ * @file yhook.h
  * @author Siger Yang (sigeryeung@gmail.com)
  * @date 2021-09-10
  *
- * @brief yhook 头
+ * @brief yhook 模块头
  */
 
 #pragma once

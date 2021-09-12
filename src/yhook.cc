@@ -5,7 +5,7 @@
  * @author Siger Yang (sigeryeung@gmail.com)
  * @date 2021-09-10
  *
- * @brief yhook 拦截主模块
+ * @brief yhook 模块主文件
  */
 
 #include "yhook.h"
@@ -36,17 +36,18 @@ DWORD write_pipe(const std::string &s)
     return write_pipe((const uint8_t *)s.c_str(), s.size());
 }
 
-// time_t millis()
-// {
-//     SYSTEMTIME time;
-//     GetSystemTime(&time);
-//     time_t t = time.wSecond;
-//     time.wmonth;
-//     time.wday;
-//     t *= 1000LL;
-//     t += time.wMilliseconds;
-//     return t;
-// }
+time_t millis(const SYSTEMTIME& t)
+{
+	tm tm;
+	tm.tm_sec = t.wSecond;
+	tm.tm_min = t.wMinute;
+	tm.tm_hour = t.wHour;
+	tm.tm_mday = t.wDay;
+	tm.tm_mon = t.wMonth - 1;
+	tm.tm_year = t.wYear - 1900;
+	tm.tm_isdst = -1;
+	return mktime(&tm);
+}
 
 void send_message(yhook_ipc_type type, const std::string &message)
 {
@@ -55,6 +56,7 @@ void send_message(yhook_ipc_type type, const std::string &message)
     t.length = message.size();
     // t.time = millis();
     GetLocalTime(&t.time);
+    t.timestamp = millis(t.time);
     t.type = type;
     s += std::string((const char *)&t, sizeof(yhook_message));
     s += message;

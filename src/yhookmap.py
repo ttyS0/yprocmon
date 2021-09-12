@@ -1,3 +1,13 @@
+#
+# Copyright (c) 2021 sigeryeung
+#
+# @file yhookmap.py
+# @author Siger Yang (sigeryeung@gmail.com)
+# @date 2021-09-11
+#
+# @brief 生成 Hook 函数以及函数对应表
+#
+
 import sys
 import re
 
@@ -43,6 +53,12 @@ for l in defs.strip().splitlines():
     info.append((name, return_type, params, params_line))
 
 func_options = {
+    "CreateFile": {
+        "prevent_recursion": True
+    },
+    "WriteFile": {
+        "prevent_recursion": True
+    },
     "memcpy": {
         "override_args": [
             ("src", "std::string((char *)__src, __n)"),
@@ -116,6 +132,7 @@ for i, f in enumerate(info):
     decltype({name})* old_{name} = (decltype({name})*) yhook_map[{i}].original;
     {return_type} ret = old_{name}({', '.join(param_names)});
     {options["func_leave"] if "func_leave" in options else ""}
+    return ret;
 }}
 '''
     else:
@@ -127,6 +144,7 @@ for i, f in enumerate(info):
     decltype({name})* old_{name} = (decltype({name})*) yhook_map[{i}].original;
     {return_type} ret = old_{name}({', '.join(param_names)});
     {options["func_leave"] if "func_leave" in options else ""}
+    return ret;
 }}
 '''
 

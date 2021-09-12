@@ -11,17 +11,13 @@
 #include <iostream>
 #include <vector>
 #include <windows.h>
-#include <detours.h>
-
-#include "yhook.h"
-#include "yprocmon.h"
-
-#include "yhttp.h"
-#include "yipcsrv.h"
 
 #include "debug.h"
-
-yprocmon_state state;
+#include "detours.h"
+#include "yhook.h"
+#include "yhttp.h"
+#include "yipcsrv.h"
+#include "yprocmon.h"
 
 // std::vector<yprocmon_thread>& threads = state.threads;
 
@@ -97,7 +93,7 @@ int main(int argc, char **argv)
     console_print("[HTTP] "
                   "Starting HTTP server at 0.0.0.0:%d.\n",
                   state.port);
-    std::thread thread_http(start_http_server, state);
+    std::thread thread_http(start_http_server);
     console_print("[IPC] "
                   "Initializing IPC pipe at %s.\n",
                   IPC_PIPE);
