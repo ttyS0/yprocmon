@@ -3,8 +3,6 @@
 int main()
 {
     MessageBox(NULL, L"666", L"777", 0);
-    if (1)
-    {
-    }
+    // MemCopy()
     return 0;
 }
