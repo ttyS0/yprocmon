@@ -72,27 +72,34 @@ struct yhook_message_entry
         writer.String(asctime);
         writer.String("type");
         writer.String(yhook_ipc_type_text[type]);
+        writer.String("data");
         if (type == YHOOK_IPC_SPAWN)
         {
+            writer.StartObject();
             writer.String("process");
             writer.String(spawn.process);
             writer.String("pid");
             writer.Uint(spawn.pid);
+            writer.EndObject();
         }
         else if (type == YHOOK_IPC_HOOK)
         {
+            writer.StartObject();
             writer.String("name");
             writer.String(hook.name);
             writer.String("args");
             writer.StartArray();
             for (auto const &arg : hook.args)
             {
+                writer.StartObject();
                 writer.String("name");
                 writer.String(arg.first);
                 writer.String("value");
                 writer.String(arg.second);
+                writer.EndObject();
             }
             writer.EndArray();
+            writer.EndObject();
         }
         writer.EndObject();
     }
