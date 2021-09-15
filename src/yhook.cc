@@ -12,12 +12,13 @@
 #include "yhookmap.h"
 #include "yipc.h"
 #include "ystr.h"
+#include "ytime.h"
 #include <detours.h>
 #include <string>
 #include <vector>
 #include <windows.h>
 
-HANDLE pipe;
+extern HANDLE pipe;
 
 extern yhook_entry yhook_map[];
 
@@ -36,19 +37,6 @@ DWORD write_pipe(const std::string &s)
     return write_pipe((const uint8_t *)s.c_str(), s.size());
 }
 
-time_t millis(const SYSTEMTIME& t)
-{
-	tm tm;
-	tm.tm_sec = t.wSecond;
-	tm.tm_min = t.wMinute;
-	tm.tm_hour = t.wHour;
-	tm.tm_mday = t.wDay;
-	tm.tm_mon = t.wMonth - 1;
-	tm.tm_year = t.wYear - 1900;
-	tm.tm_isdst = -1;
-	return mktime(&tm);
-}
-
 void send_message(yhook_ipc_type type, const std::string &message)
 {
     std::string s;
@@ -56,7 +44,10 @@ void send_message(yhook_ipc_type type, const std::string &message)
     t.length = message.size();
     // t.time = millis();
     GetLocalTime(&t.time);
-    t.timestamp = millis(t.time);
+    SYSTEMTIME utc;
+    GetSystemTime(&utc);
+    t.timestamp = jstime(utc);
+    // t.timestamp = gettime(t.time);
     t.type = type;
     s += std::string((const char *)&t, sizeof(yhook_message));
     s += message;

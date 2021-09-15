@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <windows.h>
+#include "debug.h"
 
 std::string wstrtostr(const std::wstring &wstr)
 {
@@ -43,6 +44,9 @@ template <typename T> inline std::string tostring(T *v)
     ss << (void *)v;
     return ss.str();
 }
+
+inline std::wstring towstring(const std::string& v) { return strtowstr(v); }
+inline std::wstring towstring(const std::wstring& v) { return v; }
 // inline std::string tostring(HWND v)
 // {
 //     std::stringstream ss;

@@ -14,6 +14,8 @@
 #include <vector>
 #include <windows.h>
 
+#define YHOOK_DLL "yhook.dll"
+
 #ifdef ADD_EXPORTS
 #define YHOOKAPI __declspec(dllexport)
 #else
@@ -38,7 +40,7 @@ send_hook_message(const std::string &name,
                   const std::vector<std::pair<std::string, std::string>> &args);
 inline void send_spawn_message();
 
-extern HANDLE pipe;
+HANDLE pipe;
 
 #define DECLARE_HOOKED(f) decltype(f) hooked_ #f;
 

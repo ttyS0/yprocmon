@@ -33,6 +33,25 @@ void start_http_server()
         });
     svr.Get("/api/ping", [](const httplib::Request &, httplib::Response &res)
             { res.set_content("{\"ping\": true}", "application/json"); });
+    svr.Get("/api/status",
+            [](const httplib::Request &, httplib::Response &res)
+            {
+                // state.run.
+            });
+    svr.Get("/api/instances",
+            [](const httplib::Request &, httplib::Response &res)
+            {
+                std::lock_guard<std::mutex> guard(state.instances_mutex);
+                rapidjson::StringBuffer s;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+                writer.StartArray();
+                for(auto const& e : state.instances)
+                {
+                    e.Serialize(writer);
+                }
+                writer.EndArray();
+                res.set_content(s.GetString(), "application/json");
+            });
     svr.Get("/api/operations",
             [&](const httplib::Request &req, httplib::Response &res)
             {
@@ -64,15 +83,25 @@ void start_http_server()
                 writer.EndArray();
                 res.set_content(s.GetString(), "application/json");
             });
-    svr.Post("/api/run",
-             [](const httplib::Request &req, httplib::Response &res)
-             {
-                 // detour_program();
-                 if (req.has_param(""))
-                 {
-                 }
-                 res.set_content("{\"run\": true}", "application/json");
-             });
+    // svr.Get("/api/info",
+    //          [&](const auto &req, auto &res)
+    //          {
+    //             //  std::string name, command;
+    //             //  if (req.has_param("name"))
+    //          });
+    svr.Get("/api/files",
+            [](const httplib::Request &, httplib::Response &res)
+            {
+                rapidjson::StringBuffer s;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+                writer.StartArray();
+                for (auto const &f : get_files())
+                {
+                    f.Serialize(writer);
+                }
+                writer.EndArray();
+                res.set_content(s.GetString(), "application/json");
+            });
     svr.Post("/api/upload",
              [&](const auto &req, auto &res)
              {
@@ -91,5 +120,46 @@ void start_http_server()
                      res.set_content("{\"error\": true}", "application/json");
                  }
              });
+    svr.Post("/api/run",
+             [](const httplib::Request &req, httplib::Response &res)
+             {
+                 std::string name, command;
+                 if (req.has_param("name"))
+                 {
+                     name = req.get_param_value("name");
+                     command = req.get_param_value("name");
+                     if (req.has_param("command"))
+                     {
+                         command = req.get_param_value("command");
+                     }
+                     detour_startup s;
+                     instance_entry e;
+                     s.name = name;
+                     s.command = command;
+                     bool success = detour_program(s, e);
+                     if (success)
+                     {
+                        rapidjson::StringBuffer s;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(s);
+                        e.Serialize(writer);
+                        res.set_content(s.GetString(), "application/json");
+                        std::lock_guard<std::mutex> guard(state.instances_mutex);
+                        state.instances.push_back(std::move(e));
+                     }
+                     else
+                     {
+                         res.status = 500;
+                         res.set_content("{\"run\": false}",
+                                         "application/json");
+                     }
+                 }
+                 else
+                 {
+                     res.status = 500;
+                     res.set_content("{\"run\": false}", "application/json");
+                 }
+             });
+    svr.Post("/api/stop",
+             [](const httplib::Request &req, httplib::Response &res) {});
     svr.listen("0.0.0.0", state.port);
 }

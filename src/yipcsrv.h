@@ -13,6 +13,7 @@
 #include "debug.h"
 #include "yipc.h"
 #include "yprocmon.h"
+#include "ytime.h"
 #include <windows.h>
 
 #define CONNECTING_STATE 0
@@ -342,8 +343,9 @@ VOID GetAnswerToRequest(LPPIPEINST pipe)
         //     console_print("%02X ", (unsigned char)pipe->chRequest[i]);
         // }
         // console_print("\n");
-        e.type = m->type;
+        GetNamedPipeClientProcessId(pipe->hPipeInst, &e.pid);
         e.timestamp = m->timestamp;
+        e.type = m->type;
         memcpy(&e.time, &m->time, sizeof(e.time));
         if (m->type == YHOOK_IPC_SPAWN)
         {

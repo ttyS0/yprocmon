@@ -8,7 +8,9 @@
  * @brief yprocmon 主模块
  */
 
+#include <future>
 #include <iostream>
+#include <shlwapi.h>
 #include <vector>
 #include <windows.h>
 
@@ -18,63 +20,38 @@
 #include "yhttp.h"
 #include "yipcsrv.h"
 #include "yprocmon.h"
+#include "ystr.h"
 
-// std::vector<yprocmon_thread>& threads = state.threads;
-
-// DWORD create_thread(LPTHREAD_START_ROUTINE func, LPVOID param)
-// {
-//     HANDLE hThread;
-//     DWORD threadID;
-//     hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, param, 0,
-//     &threadID); threads.push_back({ hThread, threadID }); return threadID;
-// }
-
-// void clean_thread()
-// {
-//     for(const auto& t : threads)
-//     {
-//         CloseHandle(t.handle);
-//     }
-// }
-
-int detour_program()
+std::vector<file_entry> get_files()
 {
-    DWORD dwFlags = CREATE_DEFAULT_ERROR_MODE | CREATE_SUSPENDED;
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    ZeroMemory(&pi, sizeof(pi));
-    DWORD nDlls = 1;
-    LPCSTR rpszDllsOut[256];
-    rpszDllsOut[0] = "yhook.dll";
-    DWORD error = DetourCreateProcessWithDlls(
-        TEXT("C:\\Users\\scalecom\\Desktop\\undegraduate\\fresh-a\\software-"
-             "security-project\\ymsgbox.exe"),
-        TEXT("ymsgbox.exe"), NULL, NULL, TRUE, dwFlags, NULL, NULL, &si, &pi,
-        nDlls, rpszDllsOut, NULL);
-    if (!error)
+    std::vector<file_entry> v;
+    file_entry result;
+    WIN32_FIND_DATA file;
+    SYSTEMTIME time;
+    TCHAR dir[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, dir);
+    PathAppend(dir, TEXT(SAMPLE_DIR));
+    PathAppend(dir, TEXT("\\*"));
+    console_print("[HTTP] Listing files at %s.\n", tostring(dir).c_str());
+    HANDLE hFile = FindFirstFile(dir, &file);
+    if (hFile != INVALID_HANDLE_VALUE)
     {
-        DWORD dwError = GetLastError();
-        console_print("[PROC] "
-                      "DetourCreateProcessWithDllEx failed: %ld\n",
-                      dwError);
-        if (dwError == ERROR_INVALID_HANDLE)
+        do
         {
-#if DETOURS_64BIT
-            console_print(
-                "[PROC] Can't detour a 32-bit target process from a 64-bit "
-                "parent process.\n");
-#else
-            console_print(
-                "[PROC] Can't detour a 64-bit target process from a 32-bit "
-                "parent process.\n");
-#endif
-        }
-        ExitProcess(9009);
+            if (!(file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                FileTimeToSystemTime(&file.ftCreationTime, &time);
+                v.push_back(file_entry{tostring(file.cFileName), jstime(time),
+                                       file.nFileSizeLow});
+            }
+        } while (FindNextFile(hFile, &file) != 0);
     }
+    return v;
+}
 
+int _detour_program(const PROCESS_INFORMATION pi)
+{
     ResumeThread(pi.hThread);
-
     WaitForSingleObject(pi.hProcess, INFINITE);
 
     DWORD dwResult = 0;
@@ -82,14 +59,63 @@ int detour_program()
     {
         console_print("[PROC] GetExitCodeProcess failed: %ld\n",
                       GetLastError());
-        return 9010;
     }
+    return 0;
+}
+
+bool detour_program(const detour_startup& startup, instance_entry& ret)
+{
+    DWORD dwFlags = CREATE_DEFAULT_ERROR_MODE | CREATE_SUSPENDED;
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    ZeroMemory(&pi, sizeof(pi));
+
+    TCHAR path[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, path);
+    PathAppend(path, TEXT(SAMPLE_DIR));
+    PathAppend(path, towstring(startup.name).c_str());
+
+    TCHAR dll_path[MAX_PATH];
+    OutputDebugStringW(dll_path);
+    GetCurrentDirectory(MAX_PATH, dll_path);
+    OutputDebugStringW(dll_path);
+    PathAppend(dll_path, TEXT(YHOOK_DLL));
+    OutputDebugStringW(dll_path);
+    std::string dll_path_str = tostring(dll_path);
+    LPCSTR dll = dll_path_str.c_str();
+
+    console_print("[PROC] Detouring program... path = %s, command = %s, dll = %s\n",
+                  tostring(path).c_str(), startup.command.c_str(), dll);
+    if (!DetourCreateProcessWithDlls(
+        path, (LPWSTR)towstring(startup.command).c_str(), NULL, NULL, TRUE,
+        dwFlags, NULL, NULL, &si, &pi, 1, &dll, NULL))
+    {
+        DWORD dwError = GetLastError();
+        console_print("[PROC] "
+                      "DetourCreateProcessWithDllEx failed: %ld\n",
+                      dwError);
+        if (dwError == ERROR_INVALID_HANDLE)
+        {
+            console_print("[PROC] Can't detour a mixed target process.\n");
+        }
+        return false;
+    }
+    console_print("[PROC] Start a thread waiting for pid %u.\n", pi.dwProcessId);
+    ret.waiting = std::thread (_detour_program, pi);
+    ret.pi.dwProcessId = pi.dwProcessId;
+    ret.pi.dwThreadId = pi.dwThreadId;
+    ret.pi.hProcess = pi.hProcess;
+    ret.pi.hThread = pi.hThread;
+    ret.name = std::string(startup.name);
+    ret.timestamp = time(nullptr) * 1000;
+    return true;
 }
 
 int main(int argc, char **argv)
 {
     state.port = YPROCMON_HTTP_PORT;
-    _wmkdir(TEXT("samples"));
+    _wmkdir(TEXT(SAMPLE_DIR));
     console_print("[HTTP] "
                   "Starting HTTP server at 0.0.0.0:%d.\n",
                   state.port);

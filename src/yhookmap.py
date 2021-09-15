@@ -60,7 +60,7 @@ func_options = {
         "prevent_recursion": True
     },
     "memcpy": {
-        "override_args": [
+        "add_args": [
             ("src", "std::string((char *)__src, __n)"),
             ("dst", "std::string((char *)__dst, __n)")
         ],
@@ -117,9 +117,9 @@ for i, f in enumerate(info):
 
     prevent_recursion = options["prevent_recursion"] if "prevent_recursion" in options else False
 
-    if prevent_recursion:
+    if prevent_recursion or True:
         hook_funcs += f'''{return_type} hooked_{name}({params_line}) {{
-    static bool entered = false;
+    // static bool entered = false;
     if (!entered)
     {{
         entered = true;
@@ -152,6 +152,8 @@ generated = f'''#include <string>
 #include <sstream>
 #include "yhook.h"
 #include "ystr.h"
+
+bool entered = false;
 
 { prototypes }
 yhook_entry yhook_map[] = {{

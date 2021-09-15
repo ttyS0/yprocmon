@@ -42,7 +42,7 @@ struct yhook_ipc_hook
 
 struct yhook_message
 {
-    time_t timestamp;
+    uint64_t timestamp;
     SYSTEMTIME time;
     yhook_ipc_type type;
     size_t length;
@@ -52,8 +52,9 @@ struct yhook_message
 // a unified entry to be stored in state
 struct yhook_message_entry
 {
-    time_t timestamp;
+    uint64_t timestamp;
     SYSTEMTIME time;
+    DWORD pid;
     yhook_ipc_type type;
     // union
     // {
@@ -66,8 +67,10 @@ struct yhook_message_entry
         char asctime[15];
         snprintf(asctime, 15, "%02d:%02d:%02d.%03d", time.wHour, time.wMinute, time.wSecond, time.wMilliseconds);
         writer.StartObject();
+        writer.String("pid");
+        writer.Uint(pid);
         writer.String("timestamp");
-        writer.Uint(timestamp);
+        writer.Uint64(timestamp);
         writer.String("time");
         writer.String(asctime);
         writer.String("type");
