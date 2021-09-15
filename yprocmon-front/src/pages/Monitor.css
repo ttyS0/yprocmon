@@ -1,0 +1,20 @@
+.app-monitor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-console {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-operation-list {
+  display: flex;
+  flex: 1;
+  overflow: scroll;
+  min-height: min-content;
+  width: 100%;
+}
