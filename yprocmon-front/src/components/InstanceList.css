@@ -1,12 +1,12 @@
-.file-list-item-tail {
+.instance-list-item-tail {
     float: right;
 }
 
-.file-list-box {
+.instance-list-box {
     position: relative;
 }
 
-.file-list-overlay {
+.instance-list-overlay {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -17,6 +17,6 @@
     align-items: center;
 }
 
-.file-list-placeholder {
+.instance-list-placeholder {
     padding: 40px 20px 40px 20px;
 }

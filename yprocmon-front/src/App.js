@@ -1,5 +1,5 @@
-import logo from './yprocmon.png'
-import './App.css';
+import logo from "./yprocmon.png";
+import "./App.css";
 import {
   Badge,
   Container,
@@ -7,93 +7,92 @@ import {
   Col,
   OverlayTrigger,
   Tab,
-  Tooltip
-} from 'react-bootstrap'
+  Tooltip,
+} from "react-bootstrap";
 import {
   BrowserRouter as Router,
   Switch,
   Route,
   Link,
   useRouteMatch,
-  useParams
-} from 'react-router-dom';
+  useParams,
+} from "react-router-dom";
 
-import NavBar from './components/NavBar'
-import About from './pages/About';
-import Rules from './pages/Rules';
-import Monitor from './pages/Monitor';
+import NavBar from "./components/NavBar";
+import About from "./pages/About";
+import Rules from "./pages/Rules";
+import Monitor from "./pages/Monitor";
 
-import { AppProvider } from './AppContext'
-import { useReducer } from 'react';
-import Footer from './components/Footer';
+import { AppProvider, initalState } from "./AppContext";
+import { useReducer } from "react";
+import Footer from "./components/Footer";
 
 function App() {
   const [state, dispatch] = useReducer((state, action) => {
-    switch(action.type) {
-      case 'OPERATIONS_APPEND':
+    switch (action.type) {
+      case "OPERATIONS_APPEND":
         if (!action.payload || action.payload.length == 0) return state;
         const newOperations = action.payload.map((operation) => {
-          const { type, data } = operation
+          const { type, data } = operation;
           let display = {
             type,
-            summary: ''
-          }
-          let summary
-          if (type == 'SPAWN') {
-            display.type = (<Badge bg="dark">{type}</Badge>);
-            display.summary = (
-              <>
-                <Badge bg="dark">process: {data.process}</Badge>{' '}
-                <Badge bg="dark">pid: {data.pid}</Badge>
-              </>
-            )
-          } else if (type == 'HOOK') {
-            display.type = (<Badge bg="primary">{data.name}</Badge>);
-            display.summary = data.args.map(arg => [
-              <OverlayTrigger
-                placement="bottom"
-                delay={{ show: 250, hide: 400 }}
-                overlay={(props) => <Tooltip {...props}>{arg.value}</Tooltip>}
-              >
-                <Badge bg="light" text="dark" key={arg.name}>
-                  <span>{arg.name}:</span>
-                  <Badge pill bg="info">{arg.value.length > 37 ? arg.value.substr(0, 37) + '...' : arg.value}</Badge>
-                </Badge>
-              </OverlayTrigger>,
-              ' '
-            ])
+            summary: "",
+          };
+          let summary;
+          if (type == "SPAWN") {
+            display.type = 'spawn'
+            display.summary = [
+              {
+                key: 'process',
+                value: data.process
+              },
+              {
+                key: 'pid',
+                value: data.pid
+              }
+            ];
+          } else if (type == "HOOK") {
+            display.type = data.name;
+            display.summary = data.args.map((arg) => ({
+              key: arg.name,
+              value:
+                arg.value.length > 37
+                  ? arg.value.substr(0, 37) + "..."
+                  : arg.value,
+              tooltip: arg.value
+            }));
           }
           return {
             ...operation,
-            display
-          }
-        })
+            display,
+          };
+        });
         return {
           ...state,
-          operations: state.operations.concat(newOperations)
-        }
+          operations: state.operations.concat(newOperations),
+        };
         break;
-      case 'OPERATIONS_CLEAR':
+      case "OPERATIONS_CLEAR":
         return {
           ...state,
-          operationClearAt: (new Date).getTime(),
-          operations: []
-        }
+          operationClearAt: new Date().getTime(),
+          operations: [],
+        };
         break;
-      case 'FILES_UPDATE':
+      case "INSTANCES_UPDATE":
         return {
           ...state,
-          files: action.payload
-        }
+          instances: action.payload,
+        };
+        break;
+      case "FILES_UPDATE":
+        return {
+          ...state,
+          files: action.payload,
+        };
         break;
     }
-  }, {
-    operations: [],
-    rules: [],
-    files: [],
-    instances: [],
-    operationClearAt: 0
-  })
+  }, initalState);
   // const operationTimer = setInterval(async () => {
   //   let newOperations;
   //   if (operations.length != 0) {
@@ -106,7 +105,7 @@ function App() {
   // }, 500);
   return (
     <Router>
-      <AppProvider value={{state, dispatch}}>
+      <AppProvider value={{ state, dispatch }}>
         <div className="app">
           <header className="app-header">
             <NavBar logo={logo} title="yprocmon" version="v1.0.0" />

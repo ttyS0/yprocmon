@@ -31,6 +31,7 @@ void start_http_server()
                           req.get_header_value("User-Agent").c_str(),
                           res.status);
         });
+    auto ret = svr.set_mount_point("/", "./www");
     svr.Get("/api/ping", [](const httplib::Request &, httplib::Response &res)
             { res.set_content("{\"ping\": true}", "application/json"); });
     svr.Get("/api/status",
@@ -47,7 +48,7 @@ void start_http_server()
                 writer.StartArray();
                 for(auto const& e : state.instances)
                 {
-                    e.Serialize(writer);
+                    e.second.Serialize(writer);
                 }
                 writer.EndArray();
                 res.set_content(s.GetString(), "application/json");
@@ -144,7 +145,7 @@ void start_http_server()
                         e.Serialize(writer);
                         res.set_content(s.GetString(), "application/json");
                         std::lock_guard<std::mutex> guard(state.instances_mutex);
-                        state.instances.push_back(std::move(e));
+                        state.instances[e.pi.dwProcessId] = (std::move(e));
                      }
                      else
                      {

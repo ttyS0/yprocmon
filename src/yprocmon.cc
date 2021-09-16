@@ -60,6 +60,13 @@ int _detour_program(const PROCESS_INFORMATION pi)
         console_print("[PROC] GetExitCodeProcess failed: %ld\n",
                       GetLastError());
     }
+    std::lock_guard<std::mutex> guard(state.instances_mutex);
+    if (state.instances.count(pi.dwProcessId) != 0)
+    {
+        state.instances[pi.dwProcessId].status = INSTANCE_EXITED;
+        state.instances[pi.dwProcessId].exitCode = dwResult;
+        state.instances[pi.dwProcessId].waiting.detach();
+    }
     return 0;
 }
 
@@ -107,6 +114,7 @@ bool detour_program(const detour_startup& startup, instance_entry& ret)
     ret.pi.dwThreadId = pi.dwThreadId;
     ret.pi.hProcess = pi.hProcess;
     ret.pi.hThread = pi.hThread;
+    ret.status = INSTANCE_SPAWNED;
     ret.name = std::string(startup.name);
     ret.timestamp = time(nullptr) * 1000;
     return true;

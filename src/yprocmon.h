@@ -88,5 +88,5 @@ struct yprocmon_state
     std::mutex operations_mutex;
     std::mutex instances_mutex;
     std::vector<yhook_message_entry> operations;
-    std::vector<instance_entry> instances;
+    std::map<DWORD, instance_entry> instances;
 } state;

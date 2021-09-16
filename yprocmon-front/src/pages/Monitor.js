@@ -1,11 +1,14 @@
 import "./Monitor.css";
 import FileList from "../components/FileList";
-import { Button, Container, Row, Col, Offcanvas } from "react-bootstrap";
+import { Button, Container, Row, Col, Offcanvas, Tabs, Tab } from "react-bootstrap";
 import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
 
 import api from "../api";
 import OperationList from "../components/OperationList";
 import AppContext, { AppProvider } from "../AppContext";
+import InstanceList from "../components/InstanceList";
+
+import { BsListNested } from 'react-icons/bs'
 
 function useInterval(callback, delay) {
   const savedCallback = useRef();
@@ -25,11 +28,10 @@ function useInterval(callback, delay) {
 }
 
 function Monitor(props) {
-  const [canvasOpen, setCanvas] = useState(false);
+  const [canvasOpen, setCanvasOpen] = useState(false);
   const [operationsLoading, setOperationsLoading] = useState(true);
-  console.log('monitor inited')
+  const [uploading, setUploading] = useState(false);
   useEffect(() => {
-    console.log('monitor rendered')
   }, [])
   const [filters, setFilters] = useState({
 
@@ -52,6 +54,13 @@ function Monitor(props) {
     setOperationsLock(false)
     setOperationsLoading(false);
   }
+  const updateInstances = async () => {
+    const payload = await api.instances()
+    dispatch({
+      type: "INSTANCES_UPDATE",
+      payload
+    });
+  }
   useEffect(() => {
     api.files().then((data) => {
       dispatch({
@@ -60,33 +69,54 @@ function Monitor(props) {
       });
     });
   }, []);
-  useInterval(updateOperations, isCapturing ? 1500 : null);
-  const canvasHide = () => {
-    setCanvas(false);
-  };
+  useInterval(() => {
+    updateOperations()
+    updateInstances()
+  }, isCapturing ? 1500 : null);
+  const onUpload = async (files) => {
+    setUploading(true);
+    await Promise.all(files.map(f => api.upload(f)))
+    api.files().then((data) => {
+      dispatch({
+        type: "FILES_UPDATE",
+        payload: data,
+      });
+      setUploading(false);
+    });
+  }
+  const onFileSelect = async (file) => {
+    await api.run(file.name, file.name);
+    await updateInstances();
+  }
   // const OperationListMemo = React.memo(OperationList);
   return (
     <>
       <Container className="app-monitor">
-        <Button
-          variant="primary"
-          onClick={() => alert(state.operations.length)}
-        >
-          Check Operations
-        </Button>
+        <div className="app-toolbar">
+          <Button
+            variant="primary"
+            onClick={() => setCanvasOpen(true)}>
+            <BsListNested />{' '}Task Manager
+          </Button>
+        </div>
         <div className="app-operation-list">
           {/* <OperationList loading={operationsLoading} operations={state.operations} /> */}
           <OperationList loading={operationsLoading} operations={state.operations} />
         </div>
       </Container>
-      <Offcanvas show={canvasOpen} onHide={canvasHide}>
+      <Offcanvas show={canvasOpen} onHide={() => setCanvasOpen(false)}>
         <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Offcanvas</Offcanvas.Title>
+          <Offcanvas.Title>Task Manager</Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body>
-          <div className="app-file-list">
-            <FileList files={state.files} active="ymsgbox2.exe"></FileList>
-          </div>
+          <Tabs defaultActiveKey="files">
+            <Tab eventKey="files" title="Files">
+              <FileList uploading={uploading} files={state.files} active="ymsgbox2.exe" onUpload={onUpload} onSelect={onFileSelect}></FileList>
+            </Tab>
+            <Tab eventKey="instances" title="Instances">
+              <InstanceList instances={state.instances}  onSelect={f => alert(f)}></InstanceList>
+            </Tab>
+          </Tabs>
         </Offcanvas.Body>
       </Offcanvas>
     </>
