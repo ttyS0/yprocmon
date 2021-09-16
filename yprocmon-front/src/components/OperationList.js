@@ -203,11 +203,11 @@ function OperationList(props) {
         </thead>
         <tbody>
           {showPlaceholder && ListPlaceholder}
-          {showData && props.operations.map(o => {
+          {showData && props.operations.map((o, i) => {
             // if (o.type == 'HOOK') return [];
             return(
-              <tr key={o.index}>
-                <td>{o.index}</td>
+              <tr key={i}>
+                <td>{i}</td>
                 <td>{o.time}</td>
                 <td>{o.pid}</td>
                 <td>{typemaps[o.display.type] || o.display.type}</td>
