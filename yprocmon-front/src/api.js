@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const host = '10.0.10.104'
+// const host = '10.0.10.104'
+const host = 'localhost'
 
 class Api {
   websocketURL = `ws://${host}:8052`
