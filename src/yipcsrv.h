@@ -14,6 +14,7 @@
 #include "yipc.h"
 #include "yprocmon.h"
 #include "ytime.h"
+#include "ywebsock.h"
 #include <windows.h>
 
 #define CONNECTING_STATE 0
@@ -331,7 +332,7 @@ VOID GetAnswerToRequest(LPPIPEINST pipe)
     while (processed < pipe->cbRead)
     {
         yhook_message *m = (yhook_message *)p;
-        yhook_message_entry e;
+        message_entry e;
         std::string message(m->message, m->length);
         // console_print(
         //     "[IPC] Receive IPC message from, time: %02d:%02d:%02d.%d, "
@@ -367,9 +368,7 @@ VOID GetAnswerToRequest(LPPIPEINST pipe)
             // }
             e.hook = hook;
         }
-        // console_print("\n");
-        std::lock_guard<std::mutex> guard(state.operations_mutex);
-        state.operations.push_back(e);
+        push_message(e);
         p += m->length;
         processed += m->length;
         break;

@@ -11,17 +11,43 @@
 import sys
 import re
 
+# defs = '''
+# int         MessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType)
+# HANDLE      CreateFile(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+# WINBOOL     WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)
+# WINBOOL     ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
+# HANDLE      HeapCreate(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize)
+# WINBOOL     HeapDestroy(HANDLE hHeap)
+# WINBOOL     HeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem)
+# LONG        RegCreateKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition)
+# LONG        RegSetValueEx(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+# LONG        RegDeleteValue(HKEY hKey, LPCWSTR lpValueName)
+# LONG        RegCloseKey(HKEY hKey)
+# LONG        RegOpenKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)
+# SOCKET      socket(int af, int type, int protocol)
+# int         bind(SOCKET s, const sockaddr *name, int namelen)
+# int         send(SOCKET s, const char *buf, int len, int flags)
+# int         connect(SOCKET s, const sockaddr *name, int namelen)
+# int         recv(SOCKET s, char *buf, int len, int flags)
+# void * memcpy(void * __restrict__ __dst, const void * __restrict__ __src, size_t __n)
+# '''
+
 defs = '''
-int         MessageBox(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType)
-HANDLE      CreateFile(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+int         MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+int         MessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType)
+HANDLE      CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+HANDLE      CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 WINBOOL     WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)
 WINBOOL     ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
 HANDLE      HeapCreate(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize)
 WINBOOL     HeapDestroy(HANDLE hHeap)
 WINBOOL     HeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem)
-LONG        RegCreateKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition)
-LONG        RegSetValueEx(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
-LONG        RegDeleteValue(HKEY hKey, LPCWSTR lpValueName)
+LONG        RegCreateKeyExA(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition)
+LONG        RegCreateKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition)
+LONG        RegSetValueExA(HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+LONG        RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE *lpData, DWORD cbData)
+LONG        RegDeleteValueA(HKEY hKey, LPCSTR lpValueName)
+LONG        RegDeleteValueW(HKEY hKey, LPCWSTR lpValueName)
 LONG        RegCloseKey(HKEY hKey)
 LONG        RegOpenKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)
 SOCKET      socket(int af, int type, int protocol)
@@ -74,6 +100,12 @@ func_options = {
     "recv": {
         "add_args": [
             ("data", "std::string(buf, len)")
+        ]
+    },
+    "bind": {
+        "add_args": [
+            ("addr", "std::string(inet_ntoa(((sockaddr_in *)name)->sin_addr))"),
+            ("port", "tostring(htons(((sockaddr_in *)name)->sin_port))")
         ]
     }
 }

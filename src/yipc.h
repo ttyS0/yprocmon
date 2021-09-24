@@ -9,6 +9,11 @@
  */
 
 #pragma once
+
+#include <vector>
+#include <string>
+#include <windows.h>
+
 #define IPC_PIPE "\\\\.\\pipe\\YhookPipe"
 
 enum yhook_ipc_type
@@ -48,83 +53,6 @@ struct yhook_message
     size_t length;
     char message[0];
 };
-
-// a unified entry to be stored in state
-struct yhook_message_entry
-{
-    uint64_t timestamp;
-    SYSTEMTIME time;
-    DWORD pid;
-    yhook_ipc_type type;
-    // union
-    // {
-    yhook_ipc_spawn spawn;
-    yhook_ipc_hook hook;
-    // };
-    // ~yhook_message_entry() {};
-    template <typename Writer> void Serialize(Writer &writer) const
-    {
-        char asctime[15];
-        snprintf(asctime, 15, "%02d:%02d:%02d.%03d", time.wHour, time.wMinute, time.wSecond, time.wMilliseconds);
-        writer.StartObject();
-        writer.String("pid");
-        writer.Uint(pid);
-        writer.String("timestamp");
-        writer.Uint64(timestamp);
-        writer.String("time");
-        writer.String(asctime);
-        writer.String("type");
-        writer.String(yhook_ipc_type_text[type]);
-        writer.String("data");
-        if (type == YHOOK_IPC_SPAWN)
-        {
-            writer.StartObject();
-            writer.String("process");
-            writer.String(spawn.process);
-            writer.String("pid");
-            writer.Uint(spawn.pid);
-            writer.EndObject();
-        }
-        else if (type == YHOOK_IPC_HOOK)
-        {
-            writer.StartObject();
-            writer.String("name");
-            writer.String(hook.name);
-            writer.String("args");
-            writer.StartArray();
-            for (auto const &arg : hook.args)
-            {
-                writer.StartObject();
-                writer.String("name");
-                writer.String(arg.first);
-                writer.String("value");
-                writer.String(arg.second);
-                writer.EndObject();
-            }
-            writer.EndArray();
-            writer.EndObject();
-        }
-        writer.EndObject();
-    }
-
-    // bool operator<(const yhook_message_entry& l, const yhook_message_entry& r)
-    // {
-    //     return l.timestamp < r.timestamp;
-    // }
-};
-
-bool operator<(const yhook_message_entry& l, const yhook_message_entry& r)
-{
-    return l.timestamp < r.timestamp;
-}
-bool operator<(const yhook_message_entry& l, const time_t& r)
-{
-    return l.timestamp < r;
-}
-bool operator<(const time_t& l, const yhook_message_entry& r)
-{
-    return l < r.timestamp;
-}
 
 // Hook message
 // str[NUL] name

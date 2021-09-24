@@ -21,6 +21,14 @@
 #include "yipcsrv.h"
 #include "yprocmon.h"
 #include "ystr.h"
+#include "ywebsock.h"
+
+void push_message(const message_entry &e)
+{
+    std::lock_guard<std::mutex> guard(state.state_mutex);
+    state.messages.push_back(e);
+    ws_broadcast.push_message_entry(e);
+}
 
 std::vector<file_entry> get_files()
 {
@@ -31,7 +39,7 @@ std::vector<file_entry> get_files()
     TCHAR dir[MAX_PATH];
     GetCurrentDirectory(MAX_PATH, dir);
     PathAppend(dir, TEXT(SAMPLE_DIR));
-    PathAppend(dir, TEXT("\\*"));
+    PathAppend(dir, TEXT("\\*.exe"));
     console_print("[HTTP] Listing files at %s.\n", tostring(dir).c_str());
     HANDLE hFile = FindFirstFile(dir, &file);
     if (hFile != INVALID_HANDLE_VALUE)
@@ -60,7 +68,7 @@ int _detour_program(const PROCESS_INFORMATION pi)
         console_print("[PROC] GetExitCodeProcess failed: %ld\n",
                       GetLastError());
     }
-    std::lock_guard<std::mutex> guard(state.instances_mutex);
+    std::lock_guard<std::mutex> guard(state.state_mutex);
     if (state.instances.count(pi.dwProcessId) != 0)
     {
         state.instances[pi.dwProcessId].status = INSTANCE_EXITED;
@@ -70,7 +78,7 @@ int _detour_program(const PROCESS_INFORMATION pi)
     return 0;
 }
 
-bool detour_program(const detour_startup& startup, instance_entry& ret)
+bool detour_program(const detour_startup &startup, instance_entry &ret)
 {
     DWORD dwFlags = CREATE_DEFAULT_ERROR_MODE | CREATE_SUSPENDED;
     STARTUPINFO si;
@@ -92,11 +100,12 @@ bool detour_program(const detour_startup& startup, instance_entry& ret)
     std::string dll_path_str = tostring(dll_path);
     LPCSTR dll = dll_path_str.c_str();
 
-    console_print("[PROC] Detouring program... path = %s, command = %s, dll = %s\n",
-                  tostring(path).c_str(), startup.command.c_str(), dll);
+    console_print(
+        "[PROC] Detouring program... path = %s, command = %s, dll = %s\n",
+        tostring(path).c_str(), startup.command.c_str(), dll);
     if (!DetourCreateProcessWithDlls(
-        path, (LPWSTR)towstring(startup.command).c_str(), NULL, NULL, TRUE,
-        dwFlags, NULL, NULL, &si, &pi, 1, &dll, NULL))
+            path, (LPWSTR)towstring(startup.command).c_str(), NULL, NULL, TRUE,
+            dwFlags, NULL, NULL, &si, &pi, 1, &dll, NULL))
     {
         DWORD dwError = GetLastError();
         console_print("[PROC] "
@@ -108,8 +117,9 @@ bool detour_program(const detour_startup& startup, instance_entry& ret)
         }
         return false;
     }
-    console_print("[PROC] Start a thread waiting for pid %u.\n", pi.dwProcessId);
-    ret.waiting = std::thread (_detour_program, pi);
+    console_print("[PROC] Start a thread waiting for pid %u.\n",
+                  pi.dwProcessId);
+    ret.waiting = std::thread(_detour_program, pi);
     ret.pi.dwProcessId = pi.dwProcessId;
     ret.pi.dwThreadId = pi.dwThreadId;
     ret.pi.hProcess = pi.hProcess;
@@ -123,11 +133,16 @@ bool detour_program(const detour_startup& startup, instance_entry& ret)
 int main(int argc, char **argv)
 {
     state.port = YPROCMON_HTTP_PORT;
+    state.ws_port = YPROCMON_WEBSOCKET_PORT;
     _wmkdir(TEXT(SAMPLE_DIR));
     console_print("[HTTP] "
                   "Starting HTTP server at 0.0.0.0:%d.\n",
                   state.port);
     std::thread thread_http(start_http_server);
+    console_print("[HTTP/WS] "
+                  "Starting WebSocket server at 0.0.0.0:%d.\n",
+                  state.ws_port);
+    std::thread thread_ws(start_websocket_server);
     console_print("[IPC] "
                   "Initializing IPC pipe at %s.\n",
                   IPC_PIPE);
@@ -140,5 +155,6 @@ int main(int argc, char **argv)
 
     thread_http.join();
     thread_ipc.join();
+    thread_ws.join();
     return 0;
 }
