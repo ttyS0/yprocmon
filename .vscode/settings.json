@@ -79,6 +79,9 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "csetjmp": "cpp"
+        "csetjmp": "cpp",
+        "yipc.h": "c",
+        "coroutine": "cpp",
+        "*.ipp": "c"
     }
 }
