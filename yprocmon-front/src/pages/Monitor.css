@@ -18,3 +18,20 @@
   min-height: min-content;
   width: 100%;
 }
+
+.app-toolbar {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-toolbar-row {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+}
+
+.app-toolbar-tail {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+}

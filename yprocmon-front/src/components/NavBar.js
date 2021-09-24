@@ -4,6 +4,7 @@ import {
   NavDropdown,
   Container
 } from 'react-bootstrap'
+import { BsGearFill } from 'react-icons/bs';
 import {
   Link,
 } from 'react-router-dom';
@@ -14,21 +15,27 @@ function NavBar(props)
     <Navbar bg="dark" variant="dark">
       <Container>
         <Navbar.Brand href="#home">
-            <img
+          <img
             alt=""
             src={props.logo}
             width="30"
             height="30"
             className="d-inline-block align-top"
-            />{' '}
-        {props.title}
+          />{" "}
+          {props.title}
         </Navbar.Brand>
         <Navbar.Toggle />
         <Navbar.Collapse className="justify-content-end">
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/">Monitor</Nav.Link>
-            <Nav.Link as={Link} to="/rules">Rules</Nav.Link>
-            <Nav.Link as={Link} to="/about">About</Nav.Link>
+            <Nav.Link as={Link} to="/">
+              Monitor
+            </Nav.Link>
+            <Nav.Link as={Link} to="/rules">
+              Rules
+            </Nav.Link>
+            <Nav.Link as={Link} to="/about">
+              About
+            </Nav.Link>
             {/* <Nav.Item>
               <Nav.Link eventKey="monitor">Monitor</Nav.Link>
             </Nav.Item>
@@ -39,11 +46,16 @@ function NavBar(props)
             <Nav.Link eventKey="about">About</Nav.Link>
             </Nav.Item> */}
           </Nav>
-          <Navbar.Text>{ props.version }</Navbar.Text>
+          <Nav>
+            <Nav.Link>
+              <BsGearFill />
+            </Nav.Link>
+            <Navbar.Text>{props.version}</Navbar.Text>
+          </Nav>
         </Navbar.Collapse>
       </Container>
     </Navbar>
-  )
+  );
 }
 
 export default NavBar

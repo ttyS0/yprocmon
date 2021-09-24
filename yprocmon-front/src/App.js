@@ -17,6 +17,7 @@ import {
   useRouteMatch,
   useParams,
 } from "react-router-dom";
+import Ws from 'react-websocket';
 
 import NavBar from "./components/NavBar";
 import About from "./pages/About";
@@ -26,19 +27,21 @@ import Monitor from "./pages/Monitor";
 import { AppProvider, initalState } from "./AppContext";
 import { useReducer } from "react";
 import Footer from "./components/Footer";
+import api from "./api";
 
 function App() {
   const [state, dispatch] = useReducer((state, action) => {
     switch (action.type) {
-      case "OPERATIONS_APPEND":
+      case "MESSAGES_APPEND":
         if (!action.payload || action.payload.length == 0) return state;
-        const newOperations = action.payload.map((operation) => {
-          const { type, data } = operation;
+        const newMessages = action.payload.map((m) => {
+          const { type, data } = m;
           let display = {
             type,
             summary: "",
           };
           let summary;
+          let severe = null;
           if (type == "SPAWN") {
             display.type = 'spawn'
             display.summary = [
@@ -61,28 +64,40 @@ function App() {
                   : arg.value,
               tooltip: arg.value
             }));
+            const getArg = (a) => data.args.filter(x => x.name == a)[0].value
+            if (state.sensitive[data.name]) {
+              severe = 'Sensitive operations.'
+            }
+            else if (data.name == 'send' && getArg('data').startsWith('HTTP/1.1'))
+            {
+              severe = 'HTTP contents detected.'
+            }
           }
           return {
-            ...operation,
+            ...m,
             display,
+            severe
+            // expert,
+            // severity
           };
         });
         return {
           ...state,
-          operations: state.operations.concat(newOperations),
+          messages: state.messages.concat(newMessages),
         };
         break;
-      case "OPERATIONS_CLEAR":
+      case "MESSAGES_CLEAR":
         return {
           ...state,
-          operationClearAt: new Date().getTime(),
-          operations: [],
+          messagesClearAt: new Date().getTime(),
+          messages: [],
         };
         break;
       case "INSTANCES_UPDATE":
         return {
           ...state,
           instances: action.payload,
+          instancesMap: Object.fromEntries(action.payload.map(instance => [instance.pid, instance.name]))
         };
         break;
       case "FILES_UPDATE":
@@ -95,18 +110,27 @@ function App() {
   }, initalState);
   // const operationTimer = setInterval(async () => {
   //   let newOperations;
-  //   if (operations.length != 0) {
-  //     newOperations = await api.operations(
-  //       operations[operations.length - 1].timestamp
+  //   if (messages.length != 0) {
+  //     newOperations = await api.messages(
+  //       messages[messages.length - 1].timestamp
   //     );
   //   } else {
-  //     newOperations = await api.operations();
+  //     newOperations = await api.messages();
   //   }
   // }, 500);
   return (
     <Router>
       <AppProvider value={{ state, dispatch }}>
         <div className="app">
+          <Ws url={api.websocketURL} onMessage={async (m) => {
+            // try {JSON.parse(await m.text())} catch(e) { console.log(e, m) }
+            let messages = JSON.parse(await m.text());
+            if (!Array.isArray(messages)) { messages = [messages] }
+            dispatch({
+              type: 'MESSAGES_APPEND',
+              payload: messages
+            });
+          }}></Ws>
           <header className="app-header">
             <NavBar logo={logo} title="yprocmon" version="v1.0.0" />
           </header>

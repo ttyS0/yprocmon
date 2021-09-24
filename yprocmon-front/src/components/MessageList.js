@@ -6,9 +6,10 @@ import {
   OverlayTrigger,
   Tooltip,
   Placeholder,
+  Button,
 } from "react-bootstrap";
 import { useEffect, useState, useRef } from "react";
-import { BsAppIndicator, BsPlayFill } from "react-icons/bs";
+import { BsAppIndicator, BsEyeFill, BsPlayFill } from "react-icons/bs";
 import { SwitchTransition, CSSTransition } from "react-transition-group";
 import { AutoSizer, List, Column } from "react-virtualized";
 import "react-virtualized/styles.css";
@@ -31,9 +32,14 @@ const ListPlaceholder = Array(10)
 
 const typemaps = {
   spawn: <Badge bg="dark">spawn</Badge>,
-  MessageBox: <Badge variant="info">MessageBox</Badge>,
   ...Object.fromEntries(
-    ["CreateFile", "WriteFile", "ReadFile"].map((v) => [
+    ["MessageBox", "MessageBoxA", "MessageBoxW"].map((v) => [
+      v,
+      <Badge variant="info">{v}</Badge>,
+    ])
+  ),
+  ...Object.fromEntries(
+    ["CreateFile", "CreateFileA", "CreateFileW", "WriteFile", "ReadFile"].map((v) => [
       v,
       <Badge variant="info">{v}</Badge>,
     ])
@@ -47,8 +53,14 @@ const typemaps = {
   ...Object.fromEntries(
     [
       "RegCreateKeyEx",
+      "RegCreateKeyExA",
+      "RegCreateKeyExW",
       "RegSetValueEx",
+      "RegSetValueExA",
+      "RegSetValueExW",
       "RegDeleteValue",
+      "RegDeleteValueA",
+      "RegDeleteValueW",
       "RegCloseKey",
       "RegOpenKeyEx",
     ].map((v) => [v, <Badge variant="info">{v}</Badge>])
@@ -62,23 +74,26 @@ const typemaps = {
   memcpy: <Badge variant="info">memcpy</Badge>,
 };
 
-function OperationList(props) {
+function MessageList(props) {
+  const [timer, setTimer] = useState(null);
   const [ready, setReady] = useState(false);
   const bottomElement = useRef(null);
   useEffect(() => {
     setReady(true);
   }, []);
   useEffect(() => {
-    if (bottomElement.current) {
-      bottomElement.current.scrollIntoView({ behavior: "smooth" });
+    if (bottomElement.current && props.following) {
+      setTimeout(() => {
+        bottomElement.current.scrollIntoView({ behavior: "smooth" })
+      }, 500);
     }
-  }, [props.following, props.operations, props.filters, ready, props.loading]);
+  }, [props.following, props.messages, props.filters, ready, props.loading]);
   const showPlaceholder = !ready || props.loading;
   const showData =
-    !showPlaceholder && props.operations && props.operations != 0;
+    !showPlaceholder && props.messages && props.messages != 0;
   const showText = !showPlaceholder && !showData;
   const rowRenderer = ({ key, index, isScrolling, isVisible, style }) => {
-    const o = props.operations[index];
+    const o = props.messages[index];
     return (
       <tr key={key} style={style}>
         <td>{o.index}</td>
@@ -107,7 +122,7 @@ function OperationList(props) {
     );
   };
   const rowGetter = ({ index }) => {
-    const o = props.operations[index];
+    const o = props.messages[index];
     return {
       ...o,
       type: typemaps[o.display.type],
@@ -136,7 +151,7 @@ function OperationList(props) {
   //           height={height}
   //           headerHeight={20}
   //           rowHeight={50}
-  //           rowCount={props.operations.length}
+  //           rowCount={props.messages.length}
   //           rowGetter={rowGetter}
   //         >
   //           {/* <Column label="ID" dataKey="index" /> */}
@@ -172,7 +187,7 @@ function OperationList(props) {
   //             <List
   //               width={width}
   //               height={height}
-  //               rowCount={props.operations.length}
+  //               rowCount={props.messages.length}
   //               rowHeight={20}
   //               rowRenderer={rowRenderer}
   //             />
@@ -183,7 +198,7 @@ function OperationList(props) {
   //     </tbody>
   //   </Table>
   //   {showText && (
-  //     <div style={{ textAlign: "center" }}>No operations are recorded.</div>
+  //     <div style={{ textAlign: "center" }}>No messages are recorded.</div>
   //   )}
   //   <div ref={bottomElement}></div>
   // </Container>
@@ -191,7 +206,7 @@ function OperationList(props) {
   return (
     <Container>
       {/* <div style={{ display: "flex", flexDirection: "column" }}> */}
-      <Table hover>
+      <Table hover size="sm">
         <thead>
           <tr>
             <th>ID</th>
@@ -199,50 +214,66 @@ function OperationList(props) {
             <th>Process</th>
             <th>Type</th>
             <th>Summary</th>
+            {/* <th>Action</th> */}
           </tr>
         </thead>
         <tbody>
           {showPlaceholder && ListPlaceholder}
-          {showData && props.operations.map((o, i) => {
-            // if (o.type == 'HOOK') return [];
-            return(
-              <tr key={i}>
-                <td>{i}</td>
-                <td>{o.time}</td>
-                <td>{o.pid}</td>
-                <td>{typemaps[o.display.type] || o.display.type}</td>
-                <td>
-                  {
-                    typeof o.display.summary == "string"
-                    ? o.display.summary
-                    : o.display.summary.map((s) => [
-                      <OverlayTrigger
-                        placement="bottom"
-                        delay={{ show: 250, hide: 400 }}
-                        overlay={(props) => <Tooltip {...props}>{s.tooltip}</Tooltip>}
-                      >
-                        <Badge bg="light" text="dark" key={s.key}>
-                          <span>{s.key}:</span>
-                          <Badge pill bg="info">
-                            {s.value}
-                          </Badge>
-                        </Badge>
-                      </OverlayTrigger>,
-                      ' '
-                    ])
-                  }
-                </td>
-              </tr>
-            )
-          })}
+          {showData &&
+            props.messages.map((o, i) => {
+              // if (o.type == 'HOOK') return [];
+              return (
+                <tr key={i} onClick={() => props.onSelect && props.onSelect(o)} className={o.severe ? "bg-danger" : ""}>
+                  <td>{i}</td>
+                  <td>{o.time}</td>
+                  <td>
+                    <OverlayTrigger
+                      placement="top"
+                      delay={{ show: 250, hide: 400 }}
+                      overlay={(p) => (
+                        <Tooltip {...p}>
+                          {props.instancesMap[o.pid]}
+                        </Tooltip>
+                      )}
+                    >
+                      <Badge bg="secondary">{o.pid}</Badge>
+                    </OverlayTrigger>
+                  </td>
+                  <td>{typemaps[o.display.type] || o.display.type}</td>
+                  <td>
+                    {typeof o.display.summary == "string"
+                      ? o.display.summary
+                      : o.display.summary.map((s) => [
+                          <OverlayTrigger
+                            placement="bottom"
+                            delay={{ show: 250, hide: 400 }}
+                            overlay={(props) => (
+                              <Tooltip {...props}>{s.tooltip}</Tooltip>
+                            )}
+                            key={s.key}
+                          >
+                            <Badge bg="light" text="dark">
+                              <span>{s.key}:</span>
+                              <Badge pill bg="info">
+                                {s.value}
+                              </Badge>
+                            </Badge>
+                          </OverlayTrigger>,
+                          " ",
+                        ])}
+                  </td>
+                  {/* <td><Button size="sm" variant="secondary"><BsEyeFill /></Button></td> */}
+                </tr>
+              );
+            })}
         </tbody>
       </Table>
       {showText && (
-        <div style={{ textAlign: "center" }}>No operations are recorded.</div>
+        <div style={{ textAlign: "center" }}>No messages are recorded.</div>
       )}
       <div ref={bottomElement}></div>
     </Container>
   );
 }
 
-export default OperationList;
+export default MessageList;

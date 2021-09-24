@@ -15,7 +15,7 @@ class Api
           { name: "h.exe", timestamp: 1631520309, size: 123448 }
         ]
     }
-    async operations(after) {
+    async messages(after) {
         return 
     }
 }
