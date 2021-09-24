@@ -7,6 +7,7 @@
 build/
 bak/
 bin/
+lib/
 
 node_modules
 
